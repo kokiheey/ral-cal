@@ -1,3 +1,4 @@
+import StopWatch from '@/src/components/StopWatch';
 import { loadEventTypes } from '@/src/services/storage';
 import { EventType } from '@/src/types/event';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
@@ -7,7 +8,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, ScrollView as RNScrollView, Text, TouchableOpacity, View } from "react-native";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Circle, Svg } from 'react-native-svg';
 import uuid from 'react-native-uuid';
 export const ScrollView = cssInterop(RNScrollView, {
     contentContainerStyle: true,
@@ -44,13 +44,8 @@ export default function Index() {
          <GestureHandlerRootView >
           <ScrollView className="flex-1" contentContainerStyle="flex items-center flex-grow">
             <View className="flex items-center flex-grow">
-              <Text className="text-5xl text-light-200 font-bold mt-12 mb-12">RalCal</Text>
-              <View className="items-center justify-center mt-12 w-3/4 max-w-[300px] aspect-square">
-                  <Text className="text-5xl text-light-100 font-bold absolute">00:00:00</Text>
-                  <Svg width="100%" height="100%" viewBox="0 0 100 100">
-                    <Circle cx="50" cy="50" r="45" stroke="tomato" strokeWidth="4" fill="none" />
-                  </Svg>
-              </View>
+              <Text className="text-5xl text-light-200 font-bold mt-12 mb-12 select-none" selectable={false}>RalCal</Text>
+                <StopWatch />
             </View>
           </ScrollView>
             <BottomSheet
