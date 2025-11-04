@@ -1,14 +1,51 @@
+import { WheelPicker } from '@hortau/react-native-wheel-picker-android';
 import { useLocalSearchParams } from 'expo-router';
-import React from 'react';
-import { Text, View } from 'react-native';
+import React, { useState } from 'react';
+import { Text, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+{/*const WheelPicker = cssInterop(MyWheelPicker, {className:{
+  target:false,
+  nativeStyleToProp: {},
+}});*/}
 
 const EventEditor = () => {
   const { id } = useLocalSearchParams();
-
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [hours, setHours] = useState(0);
+  const [minutes, setMinutes] = useState(0);
   return (
-    <View className="bg-primary flex-1">
-      <Text>EventEditor</Text>
-    </View>
+    <SafeAreaView className="bg-primary flex-1">
+      <Text className="text-light-100 m-3 text-bold">Event name</Text>
+      <TextInput
+        value={name}
+        onChangeText={setName}
+        placeholder="Event name"
+        placeholderTextColor="#999"
+        className="border border-dark-400 p-3 rounded-x1 text-light-100"
+      />
+      <Text className="text-light-100 m-3 text-bold">Event description</Text>
+      <TextInput
+        value={description}
+        onChangeText={setDescription}
+        placeholder="Event description"
+        placeholderTextColor="#999"
+        className="border border-dark-400 p-3 rounded-x1 text-light-100"
+      />
+      <Text className="text-light-100 m-3 text-bold">Quota hours</Text>
+      <WheelPicker
+        data = {[...Array(12).keys()].map((index) => ({
+          value: index,
+          label: index.toString(),
+        }))}
+        selectedItem={hours}
+        onItemSelected={setHours( hours )}
+      />
+
+
+      <Text className="text-light-100 m-3 text-bold">Quota minutes</Text>
+      
+    </SafeAreaView>
   )
 }
 

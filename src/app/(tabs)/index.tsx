@@ -1,4 +1,4 @@
-import { addEventType, loadEventTypes } from '@/src/services/storage';
+import { loadEventTypes } from '@/src/services/storage';
 import { EventType } from '@/src/types/event';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
@@ -15,7 +15,7 @@ export const ScrollView = cssInterop(RNScrollView, {
 
 function ListElement({id, name}: {id:string, name:string}) {
     return(
-        <TouchableOpacity className="w-full bg-accent">
+        <TouchableOpacity className="w-full bg-accent h-10">
           <Text className="text-bold">{name}</Text>
         </TouchableOpacity>
     )
@@ -34,7 +34,7 @@ export default function Index() {
   function handleNewEvent(){
     const id = uuid.v4();
     const placeholder = {id, name:'', description:'', quota:0};
-    addEventType(placeholder).then(() => router.push(`./event/${id}`));
+    router.push(`./event/${id}`);
   }
 
 
