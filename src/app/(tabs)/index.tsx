@@ -1,4 +1,5 @@
 import StopWatch from '@/src/components/StopWatch';
+import { GoogleCalendarService } from '@/src/services/googleApi';
 import { loadEventTypes } from '@/src/services/storage';
 import { EventType } from '@/src/types/event';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
@@ -12,6 +13,8 @@ import uuid from 'react-native-uuid';
 export const ScrollView = cssInterop(RNScrollView, {
     contentContainerStyle: true,
 });
+
+const calendarService = new GoogleCalendarService();
 
 function ListElement({id, name}: {id:string, name:string}) {
     return(
@@ -27,8 +30,19 @@ export default function Index() {
   const router = useRouter();
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
 
-  useEffect(() =>{
-    loadEventTypes().then(setEventTypes);
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const [types] = await Promise.all([
+          loadEventTypes(),
+          calendarService.signIn(), // also runs async
+        ]);
+        setEventTypes(types);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    init();
   }, []);
 
   function handleNewEvent(){
