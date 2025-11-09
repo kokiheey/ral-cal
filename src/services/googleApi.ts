@@ -68,6 +68,8 @@ export class GoogleCalendarService {
       const text = await response.text();
       throw new Error('Failed to create event: ' + text);
     }
+    console.log('Token:', response.json); // shows whether logged in
+
 
     return response.json();
   }

@@ -6,7 +6,7 @@ import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
 import { cssInterop } from 'nativewind';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, ScrollView as RNScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Platform, Pressable, ScrollView as RNScrollView, Text, TouchableOpacity, View } from "react-native";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaView } from "react-native-safe-area-context";
 import uuid from 'react-native-uuid';
@@ -29,7 +29,17 @@ export default function Index() {
   const snapPoints = useMemo(() => ["5%", "25%"], []);
   const router = useRouter();
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
+  const [accessToken, setToken] = useState<string>();
 
+  const handleLogin = async () => {
+    try {
+      const accessToken = await calendarService.signIn();
+      setToken(accessToken);
+      console.log('Logged in! Token:', accessToken);
+    } catch (err) {
+      console.error(err);
+    }
+  };
   useEffect(() => {
     const init = async () => {
       try {
@@ -58,6 +68,7 @@ export default function Index() {
          <GestureHandlerRootView >
           <ScrollView className="flex-1" contentContainerStyle="flex items-center flex-grow">
             <View className="flex items-center flex-grow">
+                <Pressable className="flex-1 m-2 items-center justify-center border border-light-100 rounded-[25px] px-6 py-3" onPress={handleLogin} />
               <Text className="text-5xl text-light-200 font-bold mt-12 mb-12 select-none" selectable={false}>RalCal</Text>
                 <StopWatch />
             </View>

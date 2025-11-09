@@ -1,4 +1,3 @@
-import { WheelPicker } from '@hortau/react-native-wheel-picker-android';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Text, TextInput } from 'react-native';
@@ -33,15 +32,6 @@ const EventEditor = () => {
         className="border border-dark-400 p-3 rounded-x1 text-light-100"
       />
       <Text className="text-light-100 m-3 text-bold">Quota hours</Text>
-      <WheelPicker
-        data = {[...Array(12).keys()].map((index) => ({
-          value: index,
-          label: index.toString(),
-        }))}
-        selectedItem={hours}
-        onItemSelected={setHours( hours )}
-      />
-
 
       <Text className="text-light-100 m-3 text-bold">Quota minutes</Text>
       
