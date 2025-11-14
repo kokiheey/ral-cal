@@ -23,6 +23,20 @@ function ListElement({id, name}: {id:string, name:string}) {
     )
 }
 
+GoogleSignin.configure({
+  webClientId: '185106367353-ad0blf89be9979l4uech1ia91eja4fgt.apps.googleusercontent.com', // client ID of type WEB for your server. Required to get the `idToken` on the user object, and for offline access.
+  scopes: [
+    'https://www.googleapis.com/auth/calendar'
+  ],
+  offlineAccess: false, // if you want to access Google API on behalf of the user FROM YOUR SERVER
+  hostedDomain: '', // specifies a hosted domain restriction
+  forceCodeForRefreshToken: false, // [Android] related to `serverAuthCode`, read the docs link below *.
+  accountName: '', // [Android] specifies an account name on the device that should be used
+  googleServicePlistPath: '', // [iOS] if you renamed your GoogleService-Info file, new name here, e.g. "GoogleService-Info-Staging"
+  openIdRealm: '', // [iOS] The OpenID2 realm of the home web server. This allows Google to include the user's OpenID Identifier in the OpenID Connect ID token.
+  profileImageSize: 120, // [iOS] The desired height (and width) of the profile image. Defaults to 120px
+});
+
 export default function Index() {
   const sheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ["5%", "25%"], []);
@@ -31,8 +45,10 @@ export default function Index() {
   useEffect(() => {
   const boot = async () => {
     try {
-      await GoogleSignin.signInSilently();
-
+      //const user = await GoogleSignin.signInSilently();
+      const user = await GoogleSignin.signIn();
+      console.log("success");
+      console.log(user.data?.user.email);
     } catch {
       await signInGoogle();
     }
