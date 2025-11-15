@@ -1,5 +1,4 @@
 import StopWatch from '@/src/components/StopWatch';
-import { signInGoogle } from '@/src/services/googleApi';
 import { loadEventTypes } from '@/src/services/storage';
 import { EventType } from '@/src/types/event';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
@@ -23,12 +22,39 @@ function ListElement({id, name}: {id:string, name:string}) {
     )
 }
 
+async function createDummyCalendarEvent() {
+  const { accessToken } = await GoogleSignin.getTokens();
+
+  const eventBody = {
+    summary: "Test Event",
+    description: "Dummy event created for API testing",
+    start: {
+      dateTime: new Date().toISOString(),
+      timeZone: "UTC",
+    },
+    end: {
+      dateTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      timeZone: "UTC",
+    },
+  };
+
+  await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(eventBody),
+  });
+}
+
+
 GoogleSignin.configure({
   webClientId: '185106367353-ad0blf89be9979l4uech1ia91eja4fgt.apps.googleusercontent.com', // client ID of type WEB for your server. Required to get the `idToken` on the user object, and for offline access.
   scopes: [
     'https://www.googleapis.com/auth/calendar'
   ],
-  offlineAccess: false, // if you want to access Google API on behalf of the user FROM YOUR SERVER
+  offlineAccess: true, // if you want to access Google API on behalf of the user FROM YOUR SERVER
   hostedDomain: '', // specifies a hosted domain restriction
   forceCodeForRefreshToken: false, // [Android] related to `serverAuthCode`, read the docs link below *.
   accountName: '', // [Android] specifies an account name on the device that should be used
@@ -42,6 +68,7 @@ export default function Index() {
   const snapPoints = useMemo(() => ["5%", "25%"], []);
   const router = useRouter();
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
+  const [accessToken, setAccessToken] = useState();
   useEffect(() => {
   const boot = async () => {
     try {
@@ -49,8 +76,10 @@ export default function Index() {
       const user = await GoogleSignin.signIn();
       console.log("success");
       console.log(user.data?.user.email);
-    } catch {
-      await signInGoogle();
+      //setAccessToken(user.data?.)
+    } catch (e) {
+      //await signInGoogle();
+      console.log("error: ", e);
     }
     const tempTypes = await loadEventTypes();
     setEventTypes(tempTypes);
@@ -72,9 +101,17 @@ export default function Index() {
          <GestureHandlerRootView >
           <ScrollView className="flex-1" contentContainerStyle="flex items-center flex-grow">
             <View className="flex items-center flex-grow">
+               <TouchableOpacity
+                className="w-full bg-light-100 items-center mt-4"
+                onPress={createDummyCalendarEvent}
+               >
+                <Text className="text-dark-100 font-bold">Test Google Calendar API</Text>
+            </TouchableOpacity>
               <Text className="text-5xl text-light-200 font-bold mt-12 mb-12 select-none" selectable={false}>RalCal</Text>
-                <StopWatch />
+              <StopWatch />
+           
             </View>
+
           </ScrollView>
             <BottomSheet
               ref={sheetRef}
