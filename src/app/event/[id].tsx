@@ -1,11 +1,8 @@
+import { addEventType } from '@/src/services/storage';
 import { useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
-import { Text, TextInput } from 'react-native';
+import { Pressable, Text, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-{/*const WheelPicker = cssInterop(MyWheelPicker, {className:{
-  target:false,
-  nativeStyleToProp: {},
-}});*/}
 
 const EventEditor = () => {
   const { id } = useLocalSearchParams();
@@ -13,6 +10,19 @@ const EventEditor = () => {
   const [description, setDescription] = useState('');
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
+
+  const handleEventCreate = () => {
+    const quota = hours * 60 + minutes;
+
+    const newEvent = {
+      id: id as string,
+      name,
+      quota,
+      description,
+    };
+
+    addEventType(newEvent);
+  };
   return (
     <SafeAreaView className="bg-primary flex-1">
       <Text className="text-light-100 m-3 text-bold">Event name</Text>
@@ -34,7 +44,10 @@ const EventEditor = () => {
       <Text className="text-light-100 m-3 text-bold">Quota hours</Text>
 
       <Text className="text-light-100 m-3 text-bold">Quota minutes</Text>
-      
+
+      <Pressable onPress={handleEventCreate}>
+        <Text>Create New Event</Text>
+      </Pressable>
     </SafeAreaView>
   )
 }
