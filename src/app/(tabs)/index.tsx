@@ -61,6 +61,7 @@ import uuid from 'react-native-uuid';
 
   export default function Index() {
     const sheetRef = useRef<BottomSheet>(null);
+    const swipeableRefs = useRef<{ [key: string]: typeof Swipeable | null }>({});
     const snapPoints = useMemo(() => ["5%", "25%"], []);
     const router = useRouter();
     const [eventTypes, setEventTypes] = useState<EventType[]>([]);
@@ -117,7 +118,7 @@ import uuid from 'react-native-uuid';
     function ListElement({ id, name } : {id:string, name:string }) {
       const renderRight = () => (
           <Pressable
-            className="bg-red-600 w-20 h-full items-center justify-center"
+            className="bg-red-600 w-20 h-12 items-center justify-center"
             onPress={() => removeEventType(id)}
           >
             <Text className="text-white">Del</Text>
@@ -125,7 +126,10 @@ import uuid from 'react-native-uuid';
         );
 
         return (
-          <Swipeable renderRightActions={renderRight} containerStyle={{ width: '100%' }}>
+          <Swipeable
+           friction={2} 
+          renderRightActions={renderRight} containerStyle={{ width: '100%' }}
+          simultaneousHandlers={sheetRef.current?.} >
             <Pressable
               className="bg-accent w-full mt-4 h-12 items-center justify-center"
               onPress={() => handleEventChange(id)}
@@ -158,15 +162,16 @@ import uuid from 'react-native-uuid';
                 ref={sheetRef}
                 snapPoints={snapPoints}
                 backgroundStyle={{ backgroundColor: '#1d0f4e'}}
+                //enableContentPanningGesture={false}
                 >
                   {/* MORA PLATFORM SPECIFIC*/}
                   <BottomSheetScrollView className="w-full" contentContainerStyle={
                       Platform.OS === "web"
-                        ? { alignItems: "center" }
-                        : "items-center"
+                        ? { alignItems: "center", padding:2 }
+                        : "items-center p-2"
                     }
                     horizontal={false}
-                    scrollEnabled={true}
+                    keyboardShouldPersistTaps="handled"
                     >
                     <Pressable className="bg-accent w-full mt-4 h-12 items-center justify-center"
                       onPress={handleNewEvent}

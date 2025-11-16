@@ -23,7 +23,7 @@ const EventEditor = () => {
 
     addEventType(newEvent);
 
-    router.push(`./(tabs)/index`);
+    router.back();
   };
   return (
     <SafeAreaView className="bg-primary flex-1">
