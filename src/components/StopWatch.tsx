@@ -6,7 +6,7 @@ import { Circle, Svg } from 'react-native-svg';
 function StopWatch() {
     const [isRunning, setIsRunning] = useState(false);
     const [elapsedTime, setElapsedTime] = useState(0);
-    const intervalIdRef = useRef(null);
+    const intervalIdRef = useRef<number>(0);
     const startTimeRef = useRef(0);
 
     useEffect(() => {
@@ -20,8 +20,8 @@ function StopWatch() {
 
     return (
 
-        <View className="flex-1 items-center justify-center w-3/4 max-w-[300px] aspect-square">
-            <View className="items-center justify-center mt-12 ">
+        <View className="items-center justify-center w-3/4 max-w-[300px] aspect-square h-[300px]">
+            <View className="w-full h-full items-center justify-center mt-12 ">
                         <Text className="text-5xl text-light-100 font-bold absolute">00:00:00</Text>
                         <Svg width="100%" height="100%" viewBox="0 0 100 100">
                             <Circle cx="50" cy="50" r="45" stroke="tomato" strokeWidth="4" fill="none" />
