@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { EventType } from '../types/event';
 
 const EVENT_TYPES_KEY = 'event-types';
+const STOPWATCH_KEY = 'stopwatch';
 
 export async function saveEventTypes(types: EventType[]){
     await AsyncStorage.setItem(EVENT_TYPES_KEY, JSON.stringify(types));
@@ -30,4 +31,15 @@ export async function modifyEventType(id: string, updatedFields: Partial<EventTy
         event.id == id ? {...event, ...updatedFields } : event
     );
     await saveEventTypes(updated);
+}
+
+
+export async function saveStartTime(time: number){
+    await AsyncStorage.setItem(STOPWATCH_KEY, JSON.stringify(time));
+}
+
+export async function loadStartTime(): Promise<number>{
+    const data = await AsyncStorage.getItem(STOPWATCH_KEY);
+    if(!data) console.log("no stopwatch data found");
+    return data ? JSON.parse(data) : Date.now();
 }
