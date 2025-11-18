@@ -3,4 +3,5 @@ export type EventType = {
     name: string;
     quota: number;
     description?: string;
+    colorId: string;
 }

@@ -1,11 +1,11 @@
 import StopWatch from '@/src/components/StopWatch';
-import { loadEventTypes, removeEventType } from '@/src/services/storage';
+import { loadCurrentCalendar, loadEventTypes, removeEventType } from '@/src/services/storage';
 import { EventType } from '@/src/types/event';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { cssInterop } from 'nativewind';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView as RNScrollView, Text, TouchableOpacity, View } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -183,7 +183,7 @@ function SwipeableListItemLegacy({
           className="bg-accent w-full h-12 items-center justify-center rounded-lg"
           onPress={() => onPress(id)}
         >
-          <Text className="text-white font-semibold">{name}</Text>
+          <Text className=" font-semibold">{name}</Text>
         </Pressable>
       </Swipeable>
     </View>
@@ -236,8 +236,8 @@ export default function Index() {
   const snapPoints = useMemo(() => ["5%", "25%"], []);
   const router = useRouter();
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
+  const [currentCalendar, setCurrentCalendar] = useState<string>();
   const [currentEvent, setCurrentEvent] = useState<string>();
-  const [useModernSwipeable, setUseModernSwipeable] = useState(true);
 
   useEffect(() => {
     const boot = async () => {
@@ -261,20 +261,25 @@ export default function Index() {
       }
       const tempTypes = await loadEventTypes();
       setEventTypes(tempTypes);
+      
     };
     boot();
   }, []);
 
-  useFocusEffect(() => {
+  useFocusEffect(
+  React.useCallback(() => {
     let active = true;
     const load = async () => {
       const types = await loadEventTypes();
       if (active) setEventTypes(types);
+      const calId = await loadCurrentCalendar();
+      setCurrentCalendar(calId);
+      console.log(currentCalendar); // Use the local variable instead of state
     };
     load();
     return () => { active = false };
-  });
-
+  }, []) // Dependency array goes here, inside useCallback
+);
   function handleNewEvent() {
     const id = uuid.v4() as string;
     router.push(`./event/${id}`);
@@ -290,28 +295,25 @@ export default function Index() {
     setEventTypes(prev => prev.filter(event => event.id !== eventId));
   }
 
-  const SwipeableComponent = useModernSwipeable ? SwipeableListItem : SwipeableListItemLegacy;
+  const SwipeableComponent = SwipeableListItemLegacy;
 
   return (
-    <SafeAreaView className="flex-1 bg-dark-200">
+    <SafeAreaView className="flex-1 bg-dark-100">
       <GestureHandlerRootView>
-        <ScrollView className="flex-1" contentContainerStyle="flex items-center flex-grow">
+         <Pressable
+          className="absolute top-4 right-4 w-10 h-10 bg-gray-600 rounded-lg items-center justify-center z-50"
+          onPress={() => router.push('/settings')} // Adjust the route as needed
+        >
+          <Text className="text-white text-lg">⚙️</Text>
+        </Pressable>
+
+        <ScrollView className="flex-1 bg-dark-100" contentContainerStyle="flex items-center flex-grow">
           <View className="flex items-center flex-grow">
             <TouchableOpacity
               className="w-full bg-light-100 items-center mt-4 py-3 rounded-lg mx-4"
               onPress={createDummyCalendarEvent}
             >
               <Text className="text-dark-100 font-bold">Test Google Calendar API</Text>
-            </TouchableOpacity>
-            
-            {/* Toggle for testing both approaches */}
-            <TouchableOpacity
-              className="w-full bg-blue-500 items-center mt-4 py-3 rounded-lg mx-4"
-              onPress={() => setUseModernSwipeable(!useModernSwipeable)}
-            >
-              <Text className="text-white font-bold">
-                Switch to {useModernSwipeable ? 'Legacy' : 'Modern'} Swipeable
-              </Text>
             </TouchableOpacity>
             
             <Text className="text-5xl text-light-200 font-bold mt-12 mb-6 select-none" selectable={false}>
@@ -328,9 +330,9 @@ export default function Index() {
           enableContentPanningGesture={true}
           enableHandlePanningGesture={true}
           // These help with gesture coordination
-          activeOffsetY={[-5, 5]}
-          activeOffsetX={[-10, 10]}
-          failOffsetY={[-10, 10]}
+          activeOffsetY={[-2, 2]}
+          activeOffsetX={[-5, 5]}
+          failOffsetY={[-5, 5]}
         >
           <BottomSheetScrollView 
             className="w-full" 
@@ -346,7 +348,7 @@ export default function Index() {
               className="bg-accent w-full mt-4 h-12 items-center justify-center rounded-lg mx-2"
               onPress={handleNewEvent}
             > 
-              <Text className="text-white font-semibold">+ New Event Type</Text>
+              <Text className=" font-semibold">+ New Event Type</Text>
             </Pressable>
             
             {eventTypes.map(event => (

@@ -11,7 +11,7 @@ const EventEditor = () => {
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
 
-  const handleEventCreate = () => {
+  const handleEventCreate = async () => {
     const quota = hours * 60 + minutes;
     if(!name) return;
     const newEvent = {
@@ -21,7 +21,7 @@ const EventEditor = () => {
       description,
     };
 
-    addEventType(newEvent);
+    await addEventType(newEvent);
 
     router.back();
   };
