@@ -1,8 +1,18 @@
+import { getCalendarColors } from '@/src/services/googleApi';
 import { addEventType } from '@/src/services/storage';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
-import { Pressable, Text, TextInput } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+interface CalendarColor {
+  background: string;
+  foreground: string;
+}
+
+interface CalendarColors {
+  [key: string]: CalendarColor;
+}
 
 const EventEditor = () => {
   const { id } = useLocalSearchParams();
@@ -10,6 +20,25 @@ const EventEditor = () => {
   const [description, setDescription] = useState('');
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
+  const [colorId, setColorId] = useState('1'); // Start with string
+  const [colors, setColors] = useState<CalendarColors>({});
+  const [loading, setLoading] = useState(true);
+
+  // Load calendar colors
+  useEffect(() => {
+    const loadColors = async () => {
+      try {
+        const calendarColors = await getCalendarColors();
+        setColors(calendarColors);
+      } catch (error) {
+        console.error('Failed to load colors:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadColors();
+  }, []);
 
   const handleEventCreate = async () => {
     const quota = hours * 60 + minutes;
@@ -19,39 +48,116 @@ const EventEditor = () => {
       name,
       quota,
       description,
+      colorId // Already a string
     };
 
     await addEventType(newEvent);
-
     router.back();
   };
+
+  // Number input handlers
+  const handleHoursChange = (text: string) => {
+    const value = parseInt(text) || 0;
+    setHours(Math.max(0, value));
+  };
+
+  const handleMinutesChange = (text: string) => {
+    const value = parseInt(text) || 0;
+    setMinutes(Math.max(0, Math.min(59, value))); // Clamp between 0-59
+  };
+
   return (
-    <SafeAreaView className="bg-primary flex-1">
-      <Text className="text-light-100 m-3 text-bold">Event name</Text>
+    <SafeAreaView className="bg-primary flex-1 p-4">
+      <Text className="text-light-100 text-lg font-bold mb-2">Event name</Text>
       <TextInput
         value={name}
         onChangeText={setName}
         placeholder="Event name"
         placeholderTextColor="#999"
-        className="border border-dark-400 p-3 rounded-x1 text-light-100"
+        className="border border-dark-400 p-3 rounded-xl text-light-100 mb-4"
       />
-      <Text className="text-light-100 m-3 text-bold">Event description</Text>
+      
+      <Text className="text-light-100 text-lg font-bold mb-2">Event description</Text>
       <TextInput
         value={description}
         onChangeText={setDescription}
         placeholder="Event description"
         placeholderTextColor="#999"
-        className="border border-dark-400 p-3 rounded-x1 text-light-100"
+        className="border border-dark-400 p-3 rounded-xl text-light-100 mb-4"
+        multiline
+        numberOfLines={3}
       />
-      <Text className="text-light-100 m-3 text-bold">Quota hours</Text>
+      
+      <Text className="text-light-100 text-lg font-bold mb-2">Duration</Text>
+      <View className="flex-row mb-4">
+        <View className="flex-1 mr-2">
+          <Text className="text-light-100 mb-1">Hours</Text>
+          <TextInput
+            value={hours.toString()}
+            onChangeText={handleHoursChange}
+            placeholder="0"
+            placeholderTextColor="#999"
+            className="border border-dark-400 p-3 rounded-xl text-light-100 text-center"
+            keyboardType="numeric"
+          />
+        </View>
+        <View className="flex-1 ml-2">
+          <Text className="text-light-100 mb-1">Minutes</Text>
+          <TextInput
+            value={minutes.toString()}
+            onChangeText={handleMinutesChange}
+            placeholder="0"
+            placeholderTextColor="#999"
+            className="border border-dark-400 p-3 rounded-xl text-light-100 text-center"
+            keyboardType="numeric"
+          />
+        </View>
+      </View>
 
-      <Text className="text-light-100 m-3 text-bold">Quota minutes</Text>
+      <Text className="text-light-100 text-lg font-bold mb-2">Color</Text>
+      {loading ? (
+        <Text className="text-light-100 mb-4">Loading colors...</Text>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
+          <View className="flex-row">
+            {Object.entries(colors).map(([colorKey, colorData]) => (
+              <Pressable
+                key={colorKey}
+                onPress={() => setColorId(colorKey)}
+                className={`w-12 h-12 rounded-full mx-1 border-2 ${
+                  colorId === colorKey ? 'border-white' : 'border-transparent'
+                }`}
+                style={{ backgroundColor: colorData.background }}
+              >
+                {colorId === colorKey && (
+                  <View className="flex-1 items-center justify-center">
+                    <Text 
+                      className="text-sm font-bold"
+                      style={{ color: colorData.foreground }}
+                    >
+                      ✓
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+      )}
 
-      <Pressable className="flex-1 max-w-[200px] max-h-[50px] m-2 items-center justify-center border border-light-100 rounded-[25px] px-6 py-3" onPress={handleEventCreate}>
-        <Text selectable={false} className="text-m text-light-100 font-bold select-none">Create New Event</Text>
-      </Pressable>
+      <View className="mt-auto">
+        <Pressable 
+          className="bg-accent items-center justify-center rounded-xl px-6 py-4"
+          onPress={handleEventCreate}
+          disabled={!name}
+        >
+          <Text className="text-white text-lg font-bold">Create Event Type</Text>
+        </Pressable>
+      </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 
-export default EventEditor
+
+
+export default EventEditor;

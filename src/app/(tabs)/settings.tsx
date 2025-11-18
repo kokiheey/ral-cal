@@ -1,5 +1,6 @@
 import { getAvailableCalendars, GoogleCalendar } from '@/src/services/googleApi';
-import { saveCurrentCalendar } from '@/src/services/storage';
+import { loadCurrentCalendar, saveCurrentCalendar } from '@/src/services/storage';
+import { useFocusEffect } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 const settings = () => {
@@ -10,6 +11,7 @@ const [selectedCalendar, setSelectedCalendar] = useState<string>('');
 
 function changeCalendar(id: string){
   setSelectedCalendar(id);
+  console.log(`save cal ${id}`);
   saveCurrentCalendar(id);
 }
 // Load calendars
@@ -19,13 +21,20 @@ useEffect(() => {
       const availableCalendars = await getAvailableCalendars();
       setCalendars(availableCalendars);
       
-      // Auto-select primary calendar if available
-      const primaryCalendar = availableCalendars.find(cal => cal.primary);
-      if (primaryCalendar) {
-        changeCalendar(primaryCalendar.id);
-      } else if (availableCalendars.length > 0) {
-        changeCalendar(availableCalendars[0].id);
+      const savedCalendar = await loadCurrentCalendar();
+      if(!savedCalendar){
+          // Auto-select primary calendar if available
+        const primaryCalendar = availableCalendars.find(cal => cal.primary);
+        if (primaryCalendar) {
+          changeCalendar(primaryCalendar.id);
+        } else if (availableCalendars.length > 0) {
+          changeCalendar(availableCalendars[0].id);
       }
+      else{
+        setSelectedCalendar(savedCalendar);
+      }
+      }
+      
     } catch (error) {
       console.error('Failed to load calendars:', error);
     }
@@ -33,6 +42,17 @@ useEffect(() => {
   
   loadCalendars();
 }, []);
+
+
+useFocusEffect(React.useCallback(()=>{
+  loadCurrentCalendar().then(savedCalendar => {
+    if(savedCalendar){
+      setSelectedCalendar(savedCalendar);
+    }
+  })
+},[])
+);
+
   return (
     // In your render/return statement
 <View className="p-4">

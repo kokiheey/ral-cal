@@ -1,12 +1,13 @@
 import StopWatch from '@/src/components/StopWatch';
-import { loadCurrentCalendar, loadEventTypes, removeEventType } from '@/src/services/storage';
+import { createEvent } from '@/src/services/googleApi';
+import { loadCurrentCalendar, loadEventTypes, loadStartTime, removeEventType } from '@/src/services/storage';
 import { EventType } from '@/src/types/event';
-import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetHandleProps, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { cssInterop } from 'nativewind';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView as RNScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Platform, Pressable, ScrollView as RNScrollView, Text, View } from "react-native";
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Animated, {
@@ -133,12 +134,14 @@ function SwipeableListItem({
 function SwipeableListItemLegacy({ 
   id, 
   name, 
+  eventType,
   onPress, 
   onDelete 
 }: { 
   id: string; 
   name: string; 
-  onPress: (id: string) => void;
+  eventType: EventType;
+  onPress: (id: EventType) => void;
   onDelete: (id: string) => void;
 }) {
   const swipeableRef = useRef<any>(null);
@@ -181,40 +184,13 @@ function SwipeableListItemLegacy({
       >
         <Pressable
           className="bg-accent w-full h-12 items-center justify-center rounded-lg"
-          onPress={() => onPress(id)}
+          onPress={() => onPress(eventType)}
         >
           <Text className=" font-semibold">{name}</Text>
         </Pressable>
       </Swipeable>
     </View>
   );
-}
-
-// Your existing functions remain the same...
-async function createDummyCalendarEvent() {
-  const { accessToken } = await GoogleSignin.getTokens();
-
-  const eventBody = {
-    summary: "Test Event",
-    description: "Dummy event created for API testing",
-    start: {
-      dateTime: new Date().toISOString(),
-      timeZone: "UTC",
-    },
-    end: {
-      dateTime: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-      timeZone: "UTC",
-    },
-  };
-
-  await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(eventBody),
-  });
 }
 
 GoogleSignin.configure({
@@ -237,8 +213,10 @@ export default function Index() {
   const router = useRouter();
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [currentCalendar, setCurrentCalendar] = useState<string>();
-  const [currentEvent, setCurrentEvent] = useState<string>();
+  const [currentEvent, setCurrentEvent] = useState<EventType>();
 
+  const startTimeRef = useRef<number>(0);
+  const endTimeRef = useRef<number>(0);
   useEffect(() => {
     const boot = async () => {
       if (Platform.OS === 'web') return;
@@ -274,26 +252,43 @@ export default function Index() {
       if (active) setEventTypes(types);
       const calId = await loadCurrentCalendar();
       setCurrentCalendar(calId);
-      console.log(currentCalendar); // Use the local variable instead of state
+      console.log(calId);
+      startTimeRef.current = await loadStartTime();
     };
     load();
     return () => { active = false };
-  }, []) // Dependency array goes here, inside useCallback
-);
+  }, [])
+  );
   function handleNewEvent() {
     const id = uuid.v4() as string;
     router.push(`./event/${id}`);
   }
 
-  function handleEventChange(eventId: string) {
-    setCurrentEvent(eventId);
-    console.log(`Selected event: ${eventId}`);
+  function handleEventChange(event: EventType) {
+    setCurrentEvent(event);
+    console.log(`Selected event: ${event.name}`);
   }
 
   function handleEventDelete(eventId: string) {
     removeEventType(eventId);
     setEventTypes(prev => prev.filter(event => event.id !== eventId));
   }
+
+  async function stopWatchStart(){
+    startTimeRef.current = await loadStartTime();
+  }
+
+  async function stopWatchStop(){
+    endTimeRef.current = Date.now();
+    if(currentCalendar && startTimeRef && endTimeRef && currentEvent)
+      createEvent(currentCalendar, currentEvent, startTimeRef.current, endTimeRef.current);
+  }
+
+  const CustomHandle = (props: BottomSheetHandleProps) => (
+  <View className="w-full items-center min-h-20 py-3">
+    <View className="w-32 h-2 bg-gray-400 rounded-full" />
+  </View>
+  );
 
   const SwipeableComponent = SwipeableListItemLegacy;
 
@@ -309,17 +304,10 @@ export default function Index() {
 
         <ScrollView className="flex-1 bg-dark-100" contentContainerStyle="flex items-center flex-grow">
           <View className="flex items-center flex-grow">
-            <TouchableOpacity
-              className="w-full bg-light-100 items-center mt-4 py-3 rounded-lg mx-4"
-              onPress={createDummyCalendarEvent}
-            >
-              <Text className="text-dark-100 font-bold">Test Google Calendar API</Text>
-            </TouchableOpacity>
-            
             <Text className="text-5xl text-light-200 font-bold mt-12 mb-6 select-none" selectable={false}>
               RalCal
             </Text>
-            <StopWatch />
+            <StopWatch onStart={stopWatchStart}  onStop={stopWatchStop}/>
           </View>
         </ScrollView>
         
@@ -327,12 +315,15 @@ export default function Index() {
           ref={sheetRef}
           snapPoints={snapPoints}
           backgroundStyle={{ backgroundColor: '#1d0f4e' }}
+          handleComponent={CustomHandle}
+          
           enableContentPanningGesture={true}
           enableHandlePanningGesture={true}
           // These help with gesture coordination
           activeOffsetY={[-2, 2]}
-          activeOffsetX={[-5, 5]}
-          failOffsetY={[-5, 5]}
+          //activeOffsetX={[-5, 5]}
+          //failOffsetY={[-5, 5]}
+          failOffsetX={[-20, 20]}
         >
           <BottomSheetScrollView 
             className="w-full" 
@@ -356,6 +347,7 @@ export default function Index() {
                 <SwipeableComponent
                   id={event.id}
                   name={event.name}
+                  eventType={event}
                   onPress={handleEventChange}
                   onDelete={handleEventDelete}
                 />

@@ -3,21 +3,28 @@ import { Pressable, Text, View } from "react-native";
 import { Circle, Svg } from 'react-native-svg';
 import { loadStartTime, saveStartTime } from "../services/storage";
 
-function StopWatch() {
+interface StopWatchProps{
+    onStart: () => void;
+    onStop: () => void;
+}
+
+function StopWatch({onStart, onStop}:StopWatchProps) {
     const [isRunning, setIsRunning] = useState(false);
     const [elapsedTime, setElapsedTime] = useState(0);
     const intervalIdRef = useRef<number>(0);
     const startTimeRef = useRef<number>(0);
 
-    function handleStart(){
+    async function handleStart(){
         startTimeRef.current = Date.now();
         //console.log(startTimeRef.current);
         setIsRunning(true);
-        saveStartTime(startTimeRef.current);
+        await saveStartTime(startTimeRef.current);
+        onStart();
     }
 
     function handleStop(){
         setIsRunning(false);
+        onStop();
     }
 
     useEffect(() => {

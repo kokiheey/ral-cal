@@ -45,12 +45,12 @@ export async function loadStartTime(): Promise<number>{
 }
 
 export async function saveCurrentCalendar(id: string){
-    await AsyncStorage.setItem(SELECTED_CALENDAR_KEY, JSON.stringify(id));
+    await AsyncStorage.setItem(SELECTED_CALENDAR_KEY, id);
 }
 
 export async function loadCurrentCalendar() :Promise<string>{
     const data = await AsyncStorage.getItem(SELECTED_CALENDAR_KEY);
     if(!data) console.log("NO CALENDAR SELECTED");
-    return data ? JSON.parse(data) : "0";
+    return data ? data : "0";
 }
 

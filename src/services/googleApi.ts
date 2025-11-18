@@ -7,12 +7,10 @@ import { EventType } from '../types/event';
 const createEvent = async (calendarId: string, event: EventType, startTime: number, endTime: number) => {
   const { accessToken } = await GoogleSignin.getTokens();
 
-  // Build description with quota info
-  let description = event.description || '';
   const googleEvent = {
     summary: event.name,
-    description: description.trim(),
-    colorId: event.colorId, // Use the colorId from your EventType
+    description: event.description || '',
+    colorId: event.colorId,
     start: {
       dateTime: new Date(startTime).toISOString(),
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -46,6 +44,24 @@ const createEvent = async (calendarId: string, event: EventType, startTime: numb
     throw new Error(`Calendar insert failed: ${res.status} - ${errorText}`);
   }
   return await res.json();
+};
+
+const getCalendarColors = async () => {
+  const { accessToken } = await GoogleSignin.getTokens();
+
+  const res = await fetch(
+    'https://www.googleapis.com/calendar/v3/colors',
+    {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`
+      }
+    }
+  );
+
+  if (!res.ok) throw new Error('color fetch failed');
+  const data = await res.json();
+  return data.event;
 };
 
 interface GoogleCalendar {
