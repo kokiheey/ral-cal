@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { Circle, Svg } from 'react-native-svg';
-import { loadStartTime, saveStartTime } from "../services/storage";
+import { loadStartTime, loadStopWatchRunning, saveStartTime, saveStopWatchRunning } from "../services/storage";
 
 interface StopWatchProps{
     onStart: () => void;
@@ -18,13 +18,17 @@ function StopWatch({onStart, onStop}:StopWatchProps) {
         startTimeRef.current = Date.now();
         //console.log(startTimeRef.current);
         setIsRunning(true);
+        await saveStopWatchRunning(true);
         await saveStartTime(startTimeRef.current);
         onStart();
     }
 
     function handleStop(){
         setIsRunning(false);
+        saveStopWatchRunning(false);
         onStop();
+
+        setElapsedTime(0);
     }
 
     useEffect(() => {
@@ -39,13 +43,26 @@ function StopWatch({onStart, onStop}:StopWatchProps) {
     }, [isRunning]);
 
     useEffect(() =>{
-         loadStartTime().then((stored) => {
-      if (stored !== null) {
-        startTimeRef.current = stored;
-        setElapsedTime(Date.now() - stored);
-        setIsRunning(true);
-      }
-    });
+        const loadInitialState = async () => {
+            
+            try {
+                const stored = await loadStartTime();
+                if (stored !== null) {
+                    const stopwatchState = await loadStopWatchRunning();
+                    setIsRunning(stopwatchState || false);
+
+                    if(stopwatchState){
+                        startTimeRef.current = stored;
+                        setElapsedTime(Date.now() - stored);
+                    } else {
+                        setElapsedTime(0);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading stopwatch state:', error);
+            }
+        };
+        loadInitialState();
     },[])
 
     function formatTime(){

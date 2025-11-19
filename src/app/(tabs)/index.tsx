@@ -207,6 +207,14 @@ GoogleSignin.configure({
   profileImageSize: 120,
 });
 
+
+
+const BorderedHandle = (props: BottomSheetHandleProps) => (
+  <View className="w-full items-center py-3 border-b-6 border-accent bg-dark-100 rounded-t-3xl">
+    <View className="w-16 h-1 bg-gray-400 rounded-full" />
+  </View>
+);
+
 export default function Index() {
   const sheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ["5%", "25%"], []);
@@ -284,11 +292,6 @@ export default function Index() {
       createEvent(currentCalendar, currentEvent, startTimeRef.current, endTimeRef.current);
   }
 
-  const CustomHandle = (props: BottomSheetHandleProps) => (
-  <View className="w-full items-center min-h-20 py-3">
-    <View className="w-32 h-2 bg-gray-400 rounded-full" />
-  </View>
-  );
 
   const SwipeableComponent = SwipeableListItemLegacy;
 
@@ -314,19 +317,16 @@ export default function Index() {
         <BottomSheet
           ref={sheetRef}
           snapPoints={snapPoints}
-          backgroundStyle={{ backgroundColor: '#1d0f4e' }}
-          handleComponent={CustomHandle}
-          
+          backgroundStyle={{ backgroundColor: 'transparent' }}
+          handleComponent={BorderedHandle}
           enableContentPanningGesture={true}
           enableHandlePanningGesture={true}
-          // These help with gesture coordination
           activeOffsetY={[-2, 2]}
-          //activeOffsetX={[-5, 5]}
-          //failOffsetY={[-5, 5]}
           failOffsetX={[-20, 20]}
+          style={{borderWidth:2, borderColor: '#fff', borderRadius: 25}}
         >
           <BottomSheetScrollView 
-            className="w-full" 
+            className="w-full border-2 border-accent rounded-t-3xl" 
             contentContainerStyle={
               Platform.OS === "web"
                 ? { alignItems: "center", padding: 2 }
@@ -336,7 +336,7 @@ export default function Index() {
             keyboardShouldPersistTaps="handled"
           >
             <Pressable 
-              className="bg-accent w-full mt-4 h-12 items-center justify-center rounded-lg mx-2"
+              className="bg-accent w-full mt-2 h-12 items-center justify-center rounded-lg mx-2"
               onPress={handleNewEvent}
             > 
               <Text className=" font-semibold">+ New Event Type</Text>
