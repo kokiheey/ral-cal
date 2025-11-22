@@ -54,8 +54,7 @@ useFocusEffect(React.useCallback(()=>{
 );
 
   return (
-    // In your render/return statement
-<View className="p-4">
+  <View className="p-4 bg-dark-100">
   <Text className="text-lg font-bold mb-4 text-white">Select Calendar</Text>
   
   {calendars.map(calendar => (
@@ -63,7 +62,7 @@ useFocusEffect(React.useCallback(()=>{
         key={calendar.id}
         className={`p-4 mb-2 rounded-lg border-2 ${
           selectedCalendar === calendar.id 
-            ? 'border-gray-200 bg-dark-200' 
+            ? 'border-gray-200 bg-dark-300' 
             : 'border-gray-600 bg-dark-100'
         }`}
         onPress={() => changeCalendar(calendar.id)}

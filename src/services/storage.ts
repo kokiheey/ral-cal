@@ -3,6 +3,7 @@ import { EventType } from '../types/event';
 
 const EVENT_TYPES_KEY = 'event-types';
 const STOPWATCH_KEY = 'stopwatch';
+const STOPWATCH_RUNNING_KEY = 'stopwatch-running';
 const SELECTED_CALENDAR_KEY = 'calendar-id';
 export async function saveEventTypes(types: EventType[]){
     await AsyncStorage.setItem(EVENT_TYPES_KEY, JSON.stringify(types));
@@ -54,3 +55,12 @@ export async function loadCurrentCalendar() :Promise<string>{
     return data ? data : "0";
 }
 
+export async function saveStopWatchRunning(isRunning: boolean){
+    await AsyncStorage.setItem(STOPWATCH_RUNNING_KEY, JSON.stringify(isRunning));
+}
+
+export async function loadStopWatchRunning(): Promise<boolean>{
+    const data = await AsyncStorage.getItem(STOPWATCH_RUNNING_KEY);
+    if(!data) console.log("NO stopwatch running data");
+    return data ? JSON.parse(data) : false;
+}

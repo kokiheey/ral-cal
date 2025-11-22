@@ -8,130 +8,16 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { cssInterop } from 'nativewind';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView as RNScrollView, Text, View } from "react-native";
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Animated, {
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring
-} from 'react-native-reanimated';
 import { SafeAreaView } from "react-native-safe-area-context";
 import uuid from 'react-native-uuid';
 export const ScrollView = cssInterop(RNScrollView, {
   contentContainerStyle: true,
 });
 
-// Custom Swipeable Component using modern gesture APIs
-function SwipeableListItem({ 
-  id, 
-  name, 
-  onPress, 
-  onDelete 
-}: { 
-  id: string; 
-  name: string; 
-  onPress: (id: string) => void;
-  onDelete: (id: string) => void;
-}) {
-  const translateX = useSharedValue(0);
-  const isSwiped = useSharedValue(false);
-  const startX = useSharedValue(0);
-
-  // Combined gesture that handles both horizontal swipe and vertical pass-through
-  const panGesture = Gesture.Pan()
-    .onBegin((event) => {
-      startX.value = event.translationX;
-    })
-    .onUpdate((event) => {
-      const deltaX = event.translationX - startX.value;
-      
-      // Only allow left swipe (negative translation)
-      if (deltaX < 0) {
-        translateX.value = Math.max(deltaX, -80);
-      } else if (deltaX > 0 && isSwiped.value) {
-        // Allow right swipe to close if already swiped
-        translateX.value = Math.min(deltaX, 0);
-      }
-      // If deltaX > 0 and not swiped, let the gesture pass through to BottomSheet
-    })
-    .onEnd((event) => {
-      const deltaX = event.translationX - startX.value;
-      const velocityX = event.velocityX;
-      
-      const shouldOpen = deltaX < -40 || velocityX < -500;
-      const shouldClose = deltaX > 20 || velocityX > 500;
-      
-      if (shouldOpen) {
-        translateX.value = withSpring(-80);
-        isSwiped.value = true;
-      } else if (shouldClose) {
-        translateX.value = withSpring(0);
-        isSwiped.value = false;
-      } else {
-        // Return to previous state
-        translateX.value = withSpring(isSwiped.value ? -80 : 0);
-      }
-    });
-
-  // Tap gesture for item press
-  const tapGesture = Gesture.Tap()
-    .onEnd(() => {
-      if (!isSwiped.value) {
-        runOnJS(onPress)(id);
-      } else {
-        // Close swipe if tapped while open
-        translateX.value = withSpring(0);
-        isSwiped.value = false;
-      }
-    });
-
-  // Combine gestures - race between tap and pan
-  const composedGesture = Gesture.Race(panGesture, tapGesture);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-  }));
-
-  const deleteStyle = useAnimatedStyle(() => ({
-    opacity: translateX.value < -20 ? 1 : 0,
-    transform: [{ translateX: translateX.value + 80 }],
-  }));
-
-  const handleDelete = () => {
-    translateX.value = withSpring(0);
-    runOnJS(onDelete)(id);
-  };
-
-  return (
-    <View className="w-full mt-4 overflow-hidden rounded-lg">
-      {/* Delete button that appears on swipe */}
-      <Animated.View 
-        style={deleteStyle}
-        className="absolute right-0 top-0 bottom-0 w-20 bg-red-600 items-center justify-center z-10 rounded-r-lg"
-      >
-        <Pressable 
-          onPress={handleDelete}
-          className="w-full h-full items-center justify-center"
-        >
-          <Text className="text-white font-bold text-sm">Delete</Text>
-        </Pressable>
-      </Animated.View>
-      
-      {/* Main swipeable content */}
-      <GestureDetector gesture={composedGesture}>
-        <Animated.View style={animatedStyle}>
-          <View className="bg-accent w-full h-12 items-center justify-center rounded-lg">
-            <Text className="text-white font-semibold">{name}</Text>
-          </View>
-        </Animated.View>
-      </GestureDetector>
-    </View>
-  );
-}
-
 // Alternative approach using the old Swipeable with proper configuration
-function SwipeableListItemLegacy({ 
+function SwipeableComponent({ 
   id, 
   name, 
   eventType,
@@ -206,6 +92,14 @@ GoogleSignin.configure({
   openIdRealm: '',
   profileImageSize: 120,
 });
+
+
+
+const BorderedHandle = (props: BottomSheetHandleProps) => (
+  <View className="w-full items-center py-3 border-b-6 border-accent bg-dark-100 rounded-t-3xl">
+    <View className="w-16 h-1 bg-gray-400 rounded-full" />
+  </View>
+);
 
 export default function Index() {
   const sheetRef = useRef<BottomSheet>(null);
@@ -284,20 +178,14 @@ export default function Index() {
       createEvent(currentCalendar, currentEvent, startTimeRef.current, endTimeRef.current);
   }
 
-  const CustomHandle = (props: BottomSheetHandleProps) => (
-  <View className="w-full items-center min-h-20 py-3">
-    <View className="w-32 h-2 bg-gray-400 rounded-full" />
-  </View>
-  );
 
-  const SwipeableComponent = SwipeableListItemLegacy;
 
   return (
     <SafeAreaView className="flex-1 bg-dark-100">
       <GestureHandlerRootView>
          <Pressable
           className="absolute top-4 right-4 w-10 h-10 bg-gray-600 rounded-lg items-center justify-center z-50"
-          onPress={() => router.push('/settings')} // Adjust the route as needed
+          onPress={() => router.push('/settings')}
         >
           <Text className="text-white text-lg">⚙️</Text>
         </Pressable>
@@ -314,19 +202,16 @@ export default function Index() {
         <BottomSheet
           ref={sheetRef}
           snapPoints={snapPoints}
-          backgroundStyle={{ backgroundColor: '#1d0f4e' }}
-          handleComponent={CustomHandle}
-          
+          backgroundStyle={{ backgroundColor: 'transparent' }}
+          handleComponent={BorderedHandle}
           enableContentPanningGesture={true}
           enableHandlePanningGesture={true}
-          // These help with gesture coordination
           activeOffsetY={[-2, 2]}
-          //activeOffsetX={[-5, 5]}
-          //failOffsetY={[-5, 5]}
           failOffsetX={[-20, 20]}
+          style={{borderWidth:2, borderColor: '#fff', borderRadius: 25}}
         >
           <BottomSheetScrollView 
-            className="w-full" 
+            className="w-full border-2 border-accent rounded-t-3xl" 
             contentContainerStyle={
               Platform.OS === "web"
                 ? { alignItems: "center", padding: 2 }
@@ -336,10 +221,10 @@ export default function Index() {
             keyboardShouldPersistTaps="handled"
           >
             <Pressable 
-              className="bg-accent w-full mt-4 h-12 items-center justify-center rounded-lg mx-2"
+              className="bg-accent w-full mt-2 h-12 items-center justify-center rounded-lg mx-2"
               onPress={handleNewEvent}
             > 
-              <Text className=" font-semibold">+ New Event Type</Text>
+              <Text className="font-semibold">+ New Event Type</Text>
             </Pressable>
             
             {eventTypes.map(event => (
