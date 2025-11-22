@@ -86,7 +86,9 @@ function StopWatch({onStart, onStop}:StopWatchProps) {
                         </Svg>
             </View>
             <View className="flex-row mt-4">
-                <Pressable className="flex-1 m-2 items-center justify-center border border-light-100 rounded-[25px] px-6 py-3" onPress={handleStart}
+                <Pressable 
+                 className="flex-1 m-2 items-center justify-center active:bg-dark-200 bg-dark-100 border border-light-100 rounded-[25px] px-6 py-3"
+                 onPress={handleStart}
                 >
                      {({ pressed }) => (
                         <View
@@ -101,7 +103,19 @@ function StopWatch({onStart, onStop}:StopWatchProps) {
                         </View>
                      )}
                     </Pressable>
-                <Pressable className="flex-1 m-2 items-center justify-center border border-light-100 rounded-[25px] px-6 py-3" onPress={handleStop}><Text selectable={false} className="text-2xl text-light-100 font-bold select-none">Stop</Text></Pressable>
+                <Pressable className="flex-1 m-2 items-center justify-center active:bg-dark-200 bg-dark-100 border border-light-100 rounded-[25px] px-6 py-3" onPress={handleStop}>
+                    {({ pressed }) => (
+                        <View
+                        className={
+                            pressed
+                            ? "opacity-60 scale-95"
+                            : "opacity-100 scale-100"
+                        }
+                        >
+                        <Text selectable={false} className="text-2xl text-light-100 font-bold select-none">Stop</Text>
+                    </View>
+                     )}
+                </Pressable>
             </View>
         </View>
     )

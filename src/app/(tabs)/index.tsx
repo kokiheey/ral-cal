@@ -1,7 +1,8 @@
 import StopWatch from '@/src/components/StopWatch';
-import { createEvent } from '@/src/services/googleApi';
+import { createEvent, getCalendarColors } from '@/src/services/googleApi';
 import { loadCurrentCalendar, loadEventTypes, loadStartTime, removeEventType } from '@/src/services/storage';
 import { EventType } from '@/src/types/event';
+import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetHandleProps, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -12,29 +13,30 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { SafeAreaView } from "react-native-safe-area-context";
 import uuid from 'react-native-uuid';
+
 export const ScrollView = cssInterop(RNScrollView, {
   contentContainerStyle: true,
 });
 
 // Alternative approach using the old Swipeable with proper configuration
-function SwipeableComponent({ 
-  id, 
-  name, 
+function SwipeableComponent({
+  id,
+  name,
   eventType,
-  onPress, 
-  onDelete 
-}: { 
-  id: string; 
-  name: string; 
-  eventType: EventType;
-  onPress: (id: EventType) => void;
-  onDelete: (id: string) => void;
-}) {
+  color,
+  selected,
+  onPress,
+  onDelete,
+  onEdit
+}: { id: string; name: string; eventType: EventType;color:string; selected:boolean; onPress: (id: EventType) => void; onDelete: (id: string) => void; onEdit: (id:string)=> void; }
+) {
   const swipeableRef = useRef<any>(null);
-  
+  const [open, setOpen] = useState(false);
+
   const renderRightActions = () => (
+    <>
     <Pressable
-      className="bg-red-600 w-20 h-12 items-center justify-center rounded-r-lg"
+      className="bg-red-600 w-20 h-12 items-center justify-center"
       onPress={() => {
         onDelete(id);
         swipeableRef.current?.close();
@@ -42,38 +44,46 @@ function SwipeableComponent({
     >
       <Text className="text-white font-bold">Delete</Text>
     </Pressable>
+    <Pressable
+      className="bg-orange-400 w-20 h-12 items-center justify-center"
+      onPress={() => {
+        onEdit(id);
+        swipeableRef.current?.close();
+      }}
+    >
+      <Text className="text-white font-bold">Edit</Text>
+    </Pressable>
+    </>
   );
 
   return (
     <View className="w-full mt-4 rounded-lg overflow-hidden">
       <Swipeable
         ref={swipeableRef}
-        friction={2}
-        leftThreshold={30}
-        rightThreshold={40}
         renderRightActions={renderRightActions}
-        containerStyle={{ 
-          backgroundColor: 'transparent',
-          borderRadius: 8,
-        }}
-        childrenContainerStyle={{
-          borderRadius: 8,
-        }}
-        onSwipeableWillOpen={(direction) => {
-          // Prevent BottomSheet from handling gestures when swipeable is open
-          console.log('Swipeable opening:', direction);
-        }}
-        onSwipeableClose={() => {
-          // Re-enable BottomSheet gestures
-          console.log('Swipeable closing');
-        }}
+        onSwipeableWillOpen={() => setOpen(true)}
+        onSwipeableClose={() => setOpen(false)}
+        containerStyle={{ backgroundColor: "transparent", borderRadius: 8 }}
+        childrenContainerStyle={{ borderRadius: 8 }}
       >
         <Pressable
-          className="bg-accent w-full h-12 items-center justify-center rounded-lg"
+          className={
+            (selected ? "bg-light-100" : "bg-accent") +
+            ` w-full h-12 items-center justify-center` +
+            (open ? "rounded-l-lg" : "rounded-lg")
+          }
           onPress={() => onPress(eventType)}
         >
-          <Text className=" font-semibold">{name}</Text>
+          <Text className="font-semibold top-1/2 -translate-y-1/2">{name}</Text>
+
+          {!open && (
+                    <View 
+                      className="w-6 h-6 rounded-full absolute top-1/2 -translate-y-1/2 right-3"
+                      style={{ backgroundColor: color}}
+                    />
+           )}
         </Pressable>
+        
       </Swipeable>
     </View>
   );
@@ -101,6 +111,16 @@ const BorderedHandle = (props: BottomSheetHandleProps) => (
   </View>
 );
 
+interface CalendarColor {
+  background: string;
+  foreground: string;
+}
+
+interface CalendarColors {
+  [key: string]: CalendarColor;
+}
+
+
 export default function Index() {
   const sheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ["5%", "25%"], []);
@@ -108,6 +128,7 @@ export default function Index() {
   const [eventTypes, setEventTypes] = useState<EventType[]>([]);
   const [currentCalendar, setCurrentCalendar] = useState<string>();
   const [currentEvent, setCurrentEvent] = useState<EventType>();
+  const [colors, setColors] = useState<CalendarColors>({});
 
   const startTimeRef = useRef<number>(0);
   const endTimeRef = useRef<number>(0);
@@ -130,6 +151,12 @@ export default function Index() {
       } catch (e) {
         await GoogleSignin.signIn();
         console.log("error: ", e);
+      }
+      try {
+         const calendarColors = await getCalendarColors();
+        setColors(calendarColors);
+      } catch (error) {
+        console.error('Failed to load colors:', error);
       }
       const tempTypes = await loadEventTypes();
       setEventTypes(tempTypes);
@@ -168,6 +195,11 @@ export default function Index() {
     setEventTypes(prev => prev.filter(event => event.id !== eventId));
   }
 
+  function handleEventModify(eventId: string){
+    router.push(`./event/${eventId}`);
+  }
+
+
   async function stopWatchStart(){
     startTimeRef.current = await loadStartTime();
   }
@@ -184,10 +216,10 @@ export default function Index() {
     <SafeAreaView className="flex-1 bg-dark-100">
       <GestureHandlerRootView>
          <Pressable
-          className="absolute top-4 right-4 w-10 h-10 bg-gray-600 rounded-lg items-center justify-center z-50"
+          className="absolute top-4 right-4 w-10 h-10 border-2 border-accent rounded-lg items-center justify-center z-50"
           onPress={() => router.push('/settings')}
         >
-          <Text className="text-white text-lg">⚙️</Text>
+          <Ionicons name="settings-sharp" size={20} color="white" />
         </Pressable>
 
         <ScrollView className="flex-1 bg-dark-100" contentContainerStyle="flex items-center flex-grow">
@@ -233,8 +265,11 @@ export default function Index() {
                   id={event.id}
                   name={event.name}
                   eventType={event}
+                  color={colors[event.colorId]?.background ?? '#bbb'}
+                  selected={currentEvent ? event.id==currentEvent.id: false}
                   onPress={handleEventChange}
                   onDelete={handleEventDelete}
+                  onEdit={handleEventModify}
                 />
               </View>
             ))}

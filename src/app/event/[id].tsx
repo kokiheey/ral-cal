@@ -1,5 +1,5 @@
 import { getCalendarColors } from '@/src/services/googleApi';
-import { addEventType } from '@/src/services/storage';
+import { addEventType, hasEventType, loadEventType } from '@/src/services/storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
@@ -16,18 +16,29 @@ interface CalendarColors {
 
 const EventEditor = () => {
   const { id } = useLocalSearchParams();
+  const eventId = Array.isArray(id) ? id[0] : id;
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [hours, setHours] = useState(0);
   const [minutes, setMinutes] = useState(0);
-  const [colorId, setColorId] = useState('1'); // Start with string
+  const [colorId, setColorId] = useState('1');
   const [colors, setColors] = useState<CalendarColors>({});
   const [loading, setLoading] = useState(true);
 
-  // Load calendar colors
   useEffect(() => {
-    const loadColors = async () => {
+    const loadData = async () => {
       try {
+        if (await hasEventType(eventId)) {
+          const eventT = await loadEventType(eventId);
+          if (eventT){
+            setName(eventT.name);
+            if(eventT.description) setDescription(eventT.description);
+            setHours(eventT.quota/60);
+            setMinutes(eventT.quota%60);
+            setColorId(eventT.colorId);
+          }
+        }
+
         const calendarColors = await getCalendarColors();
         setColors(calendarColors);
       } catch (error) {
@@ -36,8 +47,8 @@ const EventEditor = () => {
         setLoading(false);
       }
     };
-    
-    loadColors();
+
+    loadData();
   }, []);
 
   const handleEventCreate = async () => {
@@ -48,14 +59,13 @@ const EventEditor = () => {
       name,
       quota,
       description,
-      colorId // Already a string
+      colorId 
     };
 
     await addEventType(newEvent);
     router.back();
   };
 
-  // Number input handlers
   const handleHoursChange = (text: string) => {
     const value = parseInt(text) || 0;
     setHours(Math.max(0, value));
@@ -63,7 +73,7 @@ const EventEditor = () => {
 
   const handleMinutesChange = (text: string) => {
     const value = parseInt(text) || 0;
-    setMinutes(Math.max(0, Math.min(59, value))); // Clamp between 0-59
+    setMinutes(Math.max(0, Math.min(59, value))); 
   };
 
   return (

@@ -3,6 +3,7 @@ import { loadCurrentCalendar, saveCurrentCalendar } from '@/src/services/storage
 import { useFocusEffect } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 const settings = () => {
 
 const [calendars, setCalendars] = useState<GoogleCalendar[]>([]);
@@ -54,7 +55,7 @@ useFocusEffect(React.useCallback(()=>{
 );
 
   return (
-  <View className="p-4 bg-dark-100">
+  <SafeAreaView className="p-4 bg-dark-100 flex-1 pt-20">
   <Text className="text-lg font-bold mb-4 text-white">Select Calendar</Text>
   
   {calendars.map(calendar => (
@@ -94,7 +95,7 @@ useFocusEffect(React.useCallback(()=>{
         </View>
     </TouchableOpacity>
   ))}
-</View>
+</SafeAreaView>
   )
 }
 
